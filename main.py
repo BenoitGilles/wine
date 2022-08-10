@@ -5,10 +5,13 @@ Created on Sat Aug  6 18:01:58 2022
 @author: Alkios
 """
 
+################ Preprocessing ################
+
+
+
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.linear_model import LinearRegression
-# first neural network with keras tutorial
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import Dropout
@@ -40,12 +43,55 @@ print(corr_df, "\n")
 nb_inputs = 11
 nb_output = 10
 X = df.iloc[:, 0:nb_inputs]
-Y = df.iloc[:, [nb_inputs]]
+y = df.iloc[:, [nb_inputs]]
 
-encoded = to_categorical(Y)
+X_train2, X_test2, y_train2, y_test2 = train_test_split(X, y, test_size=0.33, random_state=42)
+#X_train2, X_test2, y_train2, y_test2 = np.array(X_train2),np.array(X_test2),np.array(y_train2),np.array(y_test2)
+
+encoded = to_categorical(y)
 Y = pd.DataFrame(encoded)
 
 X_train, X_test, y_train, y_test = train_test_split(X, Y, test_size=0.33, random_state=42)
+
+
+################ DT / RF ################
+
+
+from sklearn import tree
+import pydotplus
+from sklearn.tree import DecisionTreeClassifier
+import matplotlib.pyplot as plt
+import matplotlib.image as pltimg
+
+features = X_train.columns
+
+clf = DecisionTreeClassifier()
+
+clf = clf.fit(X, y)
+
+
+data = tree.export_graphviz(clf, out_file=None, feature_names=features)
+graph = pydotplus.graph_from_dot_data(data)
+graph.write_png('mydecisiontree.png')
+img=pltimg.imread('mydecisiontree.png')
+imgplot = plt.imshow(img)
+plt.show()
+
+
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.datasets import make_classification
+
+clf2 = RandomForestClassifier(max_depth=2, random_state=0)
+clf2.fit(X_train2, y_train2.values.ravel())
+
+
+clf.score(X_test2, y_test2)
+#score = 1
+
+
+################ DL ################
+
+
 
 inputs = np.concatenate((X_train, X_test), axis=0)
 targets = np.concatenate((y_train, y_test), axis=0)
@@ -53,7 +99,7 @@ targets = np.concatenate((y_train, y_test), axis=0)
 #seed = 7
 #tf.random.set_seed(seed)
 
-
+#model tuning
 def create_model(): 
     model = Sequential()
     model.add(Dense(64, input_shape=(nb_inputs,), activation='relu'))
@@ -288,7 +334,7 @@ for mean, stdev, param in zip(means, stds, params):
 
 
 
-
+#kfold cross validation
 acc_per_fold = []
 loss_per_fold = []
 kfold = KFold(n_splits = 5, shuffle = True)
@@ -325,3 +371,7 @@ for train, test in kfold.split(inputs, targets):
     
     # Increase fold number
     fold_no = fold_no + 1
+    
+    
+    
+# RF seems the most adapted tool, unless i can't make good NN models
